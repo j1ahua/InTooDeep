@@ -1,0 +1,20 @@
+body{
+    .title{
+        font-family: "Mrs Saint Delafield", cursive;
+        font-weight: 100;
+        font-style: normal;
+        color: white;
+    }
+    box-sizing: border-box;
+
+    position: relative;
+    width: 1440px;
+    height: 1024px;
+
+/* purp-blue */
+    background: linear-gradient(180deg, #22306C 0%, #312148 59.13%);
+    border: 1px solid #000000;
+
+
+    
+}
