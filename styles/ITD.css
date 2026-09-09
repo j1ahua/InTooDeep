@@ -4,15 +4,14 @@ body{
         font-weight: 100;
         font-style: normal;
         color: white;
+        font-size: 200px;
     }
     box-sizing: border-box;
 
     position: relative;
-    width: 1440px;
-    height: 1024px;
 
 /* purp-blue */
-    background: linear-gradient(180deg, #22306C 0%, #312148 59.13%);
+    background: linear-gradient(180deg, #22306C 0%, #312148 60%);
     border: 1px solid #000000;
 
 
