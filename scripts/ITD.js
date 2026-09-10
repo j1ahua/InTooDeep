@@ -21,7 +21,7 @@ let objToRender ='apple';
 
 //Instantiate a loader for the .gltf file
 const loader = new GLTFLoader();
-
+ 
 //load the file
 loader.load(
     `models/${objToRender}/scene.gltf`,
@@ -39,5 +39,52 @@ loader.load(
         console.error(error);
     }
 );
+//Instaniate a new renderer and set its size
+const renderer = new THREE.WebGLRenderer( {alpha: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
 
-const renderer = new THREE.WebGL
+//Add the renderer to the DOM
+document.getElementById("container3D").appendChild(renderer.domElement);
+
+//Set how far the camera will be from the 3D model
+camera.position.z = objToRender === "apple" ? 25 : 500;  
+
+//Add lights to the scene, so we can see the 3D model
+const topLight = new THREE.DirectionalLight(0xffffff, 1); //(color, intensity)
+topLight.position.set(500,500,500) //top-left-ish
+topLight.castShadow = true;
+scene.add(topLight);
+
+const ambientLight = new THREE.ambientLight(0x333333, objToRender === "apple" ? 5 : 1);
+scene.add(ambientLight);
+
+//This adds controls to the camera, so we can rotate/ zoom it with the mouse
+if (objToRender === "apple"){
+    controls = new OrbitControls(camera, renderer.domElement);
+}
+
+//Render the scene
+function animate(){
+    requestAnimationFrame(animate);
+    //Here we could add some code to update the scene, adding some automatic movement
+
+    //make the eye move
+    if (object && objToRender === "apple"){
+        object.rotation.x = -1.2 + mouseY * 2.5 / window.innerHeight;
+    }
+    renderer.render(scene, camera);
+}
+// Add a listener to the window, so we can resize the window and the camera
+window.addEventListener("resize", function(){
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+//add mouse position listener, so we can make the eye move
+document.onmousemove = (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+}
+//start the 3D rendering
+animate();
