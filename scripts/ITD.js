@@ -9,7 +9,7 @@ import { GLTFLoader } from "https://cdn.skypack.dev/three@0.129.0/examples/jsm/l
 //Create a Three.JS Scene
 const scene = new THREE.Scene();
 //create a new camera with positions and angles
-const camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 1, 1000);
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
 
 //keep track of mouse position, make the apple move
 let mouseX = window.innerWidth / 2;
@@ -40,36 +40,68 @@ let objToRender ='apple2';
 const loader = new GLTFLoader();
  
 //load the file
-loader.load(
-    `models/${objToRender}/scene.gltf`,
-    function (gltf){
-        //If the file is loaded, add it to the scene
-        object = gltf.scene;
-        object.traverse((child) => {
-            if (child.isMesh && child.material){
-                child.material.color.set(0x470B0B);
-            }
-        })
-        scene.add(object);
-    },
-    function (xhr){
-        //While it is loading, log the progress
-        console.log((xhr.loaded/xhr.total *100) + `% loaded`);
-    },
-    function (error){
-        //If there is an error, log it
-        console.error(error);
-    }
-);
+
 //Instaniate a new renderer and set its size
-const renderer = new THREE.WebGLRenderer( {alpha: true});
+const renderer = new THREE.WebGLRenderer( {
+    alpha: true, 
+    antialias: true
+});
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
 
 //Add the renderer to the DOM
 document.getElementById("container3D").appendChild(renderer.domElement);
 
 //Set how far the camera will be from the 3D model
 camera.position.z = objToRender === "apple2" ? 5 : 500;  
+
+
+//Rim light shader
+const vertexShader = `
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+
+    void main(){
+        vNormal = normalize(normalMatrix * normal);
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        vViewPosition = -mvPosition.xyz;
+        gl_Position = projectionMatrix * mvPosition;
+    }
+    `;
+const fragmentShader = `
+    uniform vec3 rimColor;
+    uniform float rimPower;
+    uniform float rimIntensity;
+    
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+    
+    void main(){
+        vec3 normal = normalize(vNormal);
+        vec3 viewDir = normalize(vViewPosition);
+        
+        // Calculate rim light using Fresnel effect
+        float rim = 1.0 -max(0.0, dot(normal, viewDir));
+        rim = pow(rim, rimPower) * rimIntensity;
+        
+        // Base color with rim light
+        vec3 finalColor = vec3(0.1, 0.1, 0.15) + rimColor * rim;
+        
+        gl_FragColor = vec4(finalColor, 1.0);
+    }
+`;
+const material = new THREE.ShaderMaterial({
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+    uniforms: {
+        rimColor: { value: new THREE.Color(0xFA575E)},
+        rimPower: { value: 3.0 },
+        rimIntensity: { value: 1.5 }
+    },
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+});
 
 //Add lights to the scene, so we can see the 3D model
 const topLight = new THREE.DirectionalLight(0xD60953, 1); //(color, intensity)
@@ -82,7 +114,7 @@ scene.add(ambientLight);
 
 const spotLight = new THREE.SpotLight(0x421A7D, 1.0, 25.0, Math.PI/4.0, 0.5, 1);
 spotLight.position.copy(camera.position);
-spotLight.map = new THREE.TextureLoader().load('images/pink-grad.jpg');
+
 
 
 
@@ -90,13 +122,58 @@ spotLight.shadow.camera.near = 1;
 spotLight.shadow.camera.far = 1000;
 spotLight.shadow.camera.fov = 80;
 
-scene.add( spotLight );
+scene.add(spotLight);
 
 //axes helper
-const cameraHelper = new THREE.CameraHelper(spotLight.shadow.camera);
-scene.add(cameraHelper);
+// const cameraHelper = new THREE.CameraHelper(spotLight.shadow.camera);
+// scene.add(cameraHelper);
 
-//This adds controls to the camera, so we can rotate/ zoom it with the mouse
+loader.load(
+    `models/${objToRender}/scene.gltf`,
+    function (gltf){
+        //If the file is loaded, add it to the scene
+        object = gltf.scene;
+        const meshesToProcess = [];
+        object.traverse((child) => {
+            if (child.isMesh){
+
+                meshesToProcess.push(child);
+            }
+        });
+        meshesToProcess.forEach((child)=>{
+                // grab the PBR material GLTFLoader already built, before we overwrite it
+                const original = child.material;
+
+                // base mesh: real lit material, keeps textures + reacts to your lights
+                child.material = new THREE.MeshStandardMaterial({
+                    map: original.map,
+                    normalMap: original.normalMap,
+                    metalnessMap: original.metalnessMap,
+                    roughnessMap: original.roughnessMap,
+                    metalness: original.metalness,
+                    roughness: original.roughness,
+                });
+                child.castShadow = true;
+                child.receiveShadow = true;
+
+                // overlay mesh: same geometry, rim shader, added as a child
+                const rimMesh = new THREE.Mesh(child.geometry, material);
+                child.add(rimMesh);
+        });
+
+            
+
+        scene.add(object);
+    },
+    function (xhr){
+        //While it is loading, log the progress
+        console.log((xhr.loaded/xhr.total *100) + `% loaded`);
+    },
+    function (error){
+        //If there is an error, log it
+        console.error(error);
+    }
+);
 
 
 //Render the scene
