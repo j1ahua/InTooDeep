@@ -1,9 +1,8 @@
-//Import the THREE.js library
-import * as THREE from "https://cdn.skypack.dev/three@0.129.0/build/three.module.js";
-// To allow for the camera to move around the scene
-import { OrbitControls } from "https://cdn.skypack.dev/three@0.129.0/examples/jsm/controls/OrbitControls.js";
-// To allow for importing the .gltf file
-import { GLTFLoader } from "https://cdn.skypack.dev/three@0.129.0/examples/jsm/loaders/GLTFLoader.js";
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 
 //Create a Three.JS Scene
@@ -94,9 +93,9 @@ const material = new THREE.ShaderMaterial({
     vertexShader: vertexShader,
     fragmentShader: fragmentShader,
     uniforms: {
-        rimColor: { value: new THREE.Color(0xFA575E)},
-        rimPower: { value: 3.0 },
-        rimIntensity: { value: 1.5 }
+        rimColor: { value: new THREE.Color(0x47002E)},
+        rimPower: { value: 5.0 },
+        rimIntensity: { value: 5.5 }
     },
     transparent: true,
     blending: THREE.AdditiveBlending,
@@ -109,8 +108,7 @@ topLight.position.set(500, 500, 500); //top-left-ish
 topLight.castShadow = true;
 scene.add(topLight);
 
-const ambientLight = new THREE.AmbientLight(0x969393, 1);
-scene.add(ambientLight);
+
 
 const spotLight = new THREE.SpotLight(0x421A7D, 1.0, 25.0, Math.PI/4.0, 0.5, 1);
 spotLight.position.copy(camera.position);
@@ -152,6 +150,7 @@ loader.load(
                     roughnessMap: original.roughnessMap,
                     metalness: original.metalness,
                     roughness: original.roughness,
+                    color: new THREE.Color(0x5E0000)
                 });
                 child.castShadow = true;
                 child.receiveShadow = true;
@@ -174,7 +173,12 @@ loader.load(
         console.error(error);
     }
 );
-
+const composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+const resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
+const bloomPass = new UnrealBloomPass(resolution, 0.2, 0.4, 1);
+composer.addPass( bloomPass );
 
 //Render the scene
 function animate(){
@@ -186,19 +190,12 @@ function animate(){
 
         const speed = baseSpeed + (hoverSpeed - baseSpeed) * hoverFactor;
         
-        // const speed = isHovering? hoverSpeed: baseSpeed;
+
         autoRotationY += speed;
 
         object.rotation.y = autoRotationY;
         object.rotation.x = 1.15;
 
-        // if (isHovering){
-        //     const targetOffsetY = (mouseX / window.innerWidth - 0.5) * 2;
-        //     const targetOffsetX = (mouseY / window.innerHeight - 0.5) * 2;
-
-        //     object.rotation.y += targetOffsetY * hoverInfluence * hoverFactor;
-        //     object.rotation.x += targetOffsetX * hoverInfluence * hoverFactor;
-        // }
     }
     renderer.render(scene, camera);
 }
@@ -206,7 +203,7 @@ function animate(){
 window.addEventListener("resize", function(){
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
 });
 
 //raycasting for hovering effects on the apple
