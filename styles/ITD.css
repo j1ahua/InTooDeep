@@ -4,7 +4,7 @@
 
 }
 body{
-    xbackground: var(--start-background);
+    background: var(--start-background);
     border: 1px solid #000000;    
     .hero{
         min-height: 100vh;
