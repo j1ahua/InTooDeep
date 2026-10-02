@@ -1,4 +1,11 @@
+:root{
+    --text: #F4EEF8;
+    --start-background: #6B6BA8;
+
+}
 body{
+    background: var(--start-background);
+    border: 1px solid #000000;    
     .hero{
         min-height: 100vh;
         min-height: 100svh;
@@ -17,25 +24,25 @@ body{
         z-index: 0;
     }
     .hero h1{
-        font-family: "Bonheur Royale", cursive;
+        font-family: "Italianno", cursive;
         font-optical-sizing: auto;
         font-weight: 600;
         font-style: normal;
-        color: black;
+        color: var(--text);
         font-size: 200px;
         position: relative;
         z-index: 1;
+        text-align: center;
     }
     .content{
         font-family: "Orbitron", sans-serif;
         font-optical-sizing: auto;
-        color: #1E1424;
+        color: var(--text);
     }
     
 
 
-    background: #CFCDEE;
-    border: 1px solid #000000;    
+
 }
 html, body{
     margin: 0;

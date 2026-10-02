@@ -5,14 +5,20 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 
+
+gsap.registerPlugin(ScrollTrigger);
+
+const lenis = new Lenis();
+lenis.on('scroll', ScrollTrigger.update);
+gsap.ticker.add((time) => lenis.raf(time * 1000));
+gsap.ticker.lagSmoothing(0);
+
+
 //Create a Three.JS Scene
 const scene = new THREE.Scene();
 //create a new camera with positions and angles
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+const camera = new THREE.PerspectiveCamera(25, window.innerWidth / window.innerHeight, 1, 1000);
 
-//keep track of mouse position, make the apple move
-let mouseX = window.innerWidth / 2;
-let mouseY = window.innerHeight / 2;
 
 //continuous auto rotation state
 let autoRotationY = 0;
@@ -29,8 +35,6 @@ const hoverInfluence = 0.8; // tweak if needed
 // keep 3d object on global variable to modify later
 let object;
 
-//OrbitControl allow the camera to move around in the scene
-let controls;
 
 //Set which object to render
 let objToRender ='apple2';
@@ -45,8 +49,9 @@ const renderer = new THREE.WebGLRenderer( {
     alpha: true, 
     antialias: true
 });
+const pixelRatio = Math.min(window.devicePixelRatio, 2);
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(pixelRatio);
 
 //Add the renderer to the DOM
 document.getElementById("container3D").appendChild(renderer.domElement);
@@ -198,22 +203,32 @@ function animate(){
 
     }
     renderer.render(scene, camera);
+    // composer.render();
 }
 // Add a listener to the window, so we can resize the window and the camera
-window.addEventListener("resize", function(){
-    camera.aspect = window.innerWidth / window.innerHeight;
+const container = document.getElementById("container3D");
+function onResize() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    composer.setSize(window.innerWidth, window.innerHeight);
-});
+
+    renderer.setPixelRatio(pixelRatio); // ratio first
+    renderer.setSize(width, height);
+
+    composer.setPixelRatio(pixelRatio);
+    composer.setSize(width, height);
+}
+
+window.addEventListener("resize", onResize);
 
 //raycasting for hovering effects on the apple
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
 document.onmousemove = (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-    
+
     pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
     pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
     if (object){
