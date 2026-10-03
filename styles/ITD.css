@@ -1,5 +1,5 @@
 :root{
-    --text: #F4EEF8;
+    --text: #AF8FB5;
     --start-background: #6B6BA8;
 
 }
@@ -15,6 +15,13 @@ body{
         flex-direction: column;
         justify-content: center;
         box-sizing: border-box;
+        height: 1000vh;
+    }
+    #container3D{
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
     }
     .hero canvas{
         position: absolute;
@@ -38,6 +45,10 @@ body{
         font-family: "Orbitron", sans-serif;
         font-optical-sizing: auto;
         color: var(--text);
+        position: relative;
+        z-index: 1;
+        padding-left: 45vw;
+        padding-right: 45vw;
     }
     
 

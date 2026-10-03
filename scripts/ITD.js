@@ -4,7 +4,9 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-
+//values that scrolling controls:
+const apple = { x: 0, scale: 1, spin: 0};
+let baseScale = 1; //the apple's original scale from the gltf
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -166,7 +168,7 @@ loader.load(
         });
 
             
-
+        baseScale = object.scale.x;
         scene.add(object);
     },
     function (xhr){
@@ -192,15 +194,13 @@ function animate(){
     if (object) {
         const target = isHovering ? 1: 0;
         hoverFactor += (target - hoverFactor) * hoverLerpSpeed;
-
         const speed = baseSpeed + (hoverSpeed - baseSpeed) * hoverFactor;
-        
-
         autoRotationY += speed;
 
-        object.rotation.y = autoRotationY;
+        object.rotation.y = autoRotationY + apple.spin; //auto spin + scroll
         object.rotation.x = 1.15;
-
+        object.position.x = apple.x;
+        object.scale.setScalar(baseScale * apple.scale);
     }
     renderer.render(scene, camera);
     // composer.render();
@@ -237,5 +237,46 @@ document.onmousemove = (e) => {
         isHovering = intersects.length > 0;
     }
 };
+
+function getLeftX(){
+    const halfHeight = Math.tan(THREE.MathUtils.degToRad(camera.fov /2));
+    const halfWidth = halfHeight * camera.aspect;
+    return -halfWidth * 0.5; //center of the left half of the screen
+}
+
+gsap.to(apple, {
+    spin: Math.PI * 2,      //one full turn on the y axis
+    scale: 0.55,            //shrink
+    x: () => getLeftX(),
+    ease: "none",
+    scrollTrigger:{
+        trigger: ".hero",
+        start: "top top",
+        end: "bottom top",
+        scrub: 1,
+        invalidateOnRefresh: true
+    }
+});
+
+//Text "spawns" from the apple, wipes in from left to right
+
+gsap.utils.toArray(".content > *").forEach((el) => {
+    gsap.fromTo(el,
+        { clipPath: "inset(0 100% 0 0)", x: -60, opacity: 0 },
+        {
+            clipPath: "inset(0 0% 0 0)",
+            x: 0,
+            opacity: 1,
+            duration: 1,
+            ease: "power3.out",
+            scrollTrigger: {
+                trigger: el,
+                start: "top 85%",
+                toggleActions: "play none none reverse"
+            }
+        }
+    );
+});
+
 //start the 3D rendering
 animate();
