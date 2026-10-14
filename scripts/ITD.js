@@ -5,7 +5,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 //values that scrolling controls:
-const apple = { x: 0, scale: 1, spin: 0};
+const apple = { x: 0, y: 0, scale: 1, spin: 0};
 let baseScale = 1; //the apple's original scale from the gltf
 
 gsap.registerPlugin(ScrollTrigger);
@@ -187,6 +187,7 @@ const resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
 const bloomPass = new UnrealBloomPass(resolution, 0.2, 0.4, 1);
 composer.addPass( bloomPass );
 
+
 //Render the scene
 function animate(){
     requestAnimationFrame(animate);
@@ -200,13 +201,14 @@ function animate(){
         object.rotation.y = autoRotationY + apple.spin; //auto spin + scroll
         object.rotation.x = 1.15;
         object.position.x = apple.x;
+        object.position.y = apple.y;
         object.scale.setScalar(baseScale * apple.scale);
     }
     renderer.render(scene, camera);
     // composer.render();
 }
 // Add a listener to the window, so we can resize the window and the camera
-const container = document.getElementById("container3D");
+// const container = document.getElementById("container3D");
 function onResize() {
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -241,42 +243,177 @@ document.onmousemove = (e) => {
 function getLeftX(){
     const halfHeight = Math.tan(THREE.MathUtils.degToRad(camera.fov /2));
     const halfWidth = halfHeight * camera.aspect;
-    return -halfWidth * 0.5; //center of the left half of the screen
+    return -halfWidth * 2; //center of the left half of the screen
 }
 
-gsap.to(apple, {
-    spin: Math.PI * 2,      //one full turn on the y axis
-    scale: 0.55,            //shrink
-    x: () => getLeftX(),
-    ease: "none",
-    scrollTrigger:{
-        trigger: ".hero",
-        start: "top top",
-        end: "bottom top",
-        scrub: 1,
-        invalidateOnRefresh: true
-    }
-});
+// gsap.to(apple, {
+//     spin: Math.PI * 2,      //one full turn on the y axis
+//     scale: 0.3,            //shrink
+//     x: () => getLeftX(),
+//     ease: "none",
+//     scrollTrigger:{
+//         trigger: ".hero",
+//         start: "top top",
+//         end: "bottom top",
+//         scrub: 1,
+//         invalidateOnRefresh: true
+//     }
+// });
 
 //Text "spawns" from the apple, wipes in from left to right
 
-gsap.utils.toArray(".content > *").forEach((el) => {
-    gsap.fromTo(el,
-        { clipPath: "inset(0 100% 0 0)", x: -60, opacity: 0 },
-        {
-            clipPath: "inset(0 0% 0 0)",
-            x: 0,
-            opacity: 1,
-            duration: 1,
-            ease: "power3.out",
-            scrollTrigger: {
-                trigger: el,
-                start: "top 85%",
-                toggleActions: "play none none reverse"
-            }
-        }
-    );
+// gsap.utils.toArray(".content > *").forEach((el) => {
+//     gsap.fromTo(el,
+//         { clipPath: "inset(0 100% 0 0)", x: -60, opacity: 0 },
+//         {
+//             clipPath: "inset(0 0% 0 0)",
+//             x: 0,
+//             opacity: 1,
+//             duration: 1,
+//             ease: "power3.out",
+//             scrollTrigger: {
+//                 trigger: el,
+//                 start: "top 85%",
+//                 toggleActions: "play none none reverse"
+//             }
+//         }
+//     );
+// });
+const POS = {
+  start:   { nx: 0,    ny: 0,     scale: 1 },
+  left:    { nx: -0.65, ny: 0,     scale: 0.3 },
+  about:   { nx: 0.65,  ny: 0.45,  scale: 0.4 },
+  contact: { nx: 0.65,  ny: -0.5,  scale: 0.3 }
+};
+
+function worldAt(p) {
+  const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z;
+  const halfW = halfH * camera.aspect;
+  return { x: p.nx * halfW, y: p.ny * halfH };
+}
+
+// one scroll-scrubbed move from one spot to another
+function appleMove(from, to, spinFrom, spinTo, st) {
+  gsap.fromTo(apple,
+    { x: () => worldAt(from).x, y: () => worldAt(from).y, scale: from.scale, spin: spinFrom },
+    {
+      x: () => worldAt(to).x, y: () => worldAt(to).y, scale: to.scale, spin: spinTo,
+      ease: "none",
+      immediateRender: false, // otherwise a later move would overwrite an earlier one on load
+      scrollTrigger: { scrub: true, invalidateOnRefresh: true, ...st }
+    }
+  );
+}
+const track = document.querySelector(".episodes");
+const getDistance = () => Math.max(0, track.scrollWidth - window.innerWidth * 0.5);
+
+// 1. hero -> apple moves left (replaces your old gsap.to(apple, ...))
+appleMove(POS.start, POS.left, 0, Math.PI * 2, {
+  trigger: ".hero", start: "top top", end: "bottom top"
 });
+
+// 2. episodes: pin the section and slide the cards sideways
+const horizontalTween = gsap.to(track, {
+  x: () => -getDistance(),
+  ease: "none",
+  scrollTrigger: {
+    trigger: ".descriptions",
+    start: "top top",
+    end: () => "+=" + getDistance(),
+    pin: true,
+    scrub: true,
+    invalidateOnRefresh: true,
+    anticipatePin: 1
+  }
+});
+
+// apple stays on the left and turns half a rotation while the cards slide
+appleMove(POS.left, POS.left, Math.PI * 2, Math.PI * 3, {
+  trigger: ".descriptions", start: "top top", end: () => "+=" + getDistance()
+});
+
+// 3. About Me: left -> top-right
+appleMove(POS.left, POS.about, Math.PI * 3, Math.PI * 5, {
+  trigger: ".aboutMe", start: "top bottom", end: "top 40%"
+});
+
+// 4. Contact: top-right -> bottom-right
+appleMove(POS.about, POS.contact, Math.PI * 5, Math.PI * 7, {
+  trigger: ".contact", start: "top bottom", end: "top 40%"
+});
+
+// cards ease in as they enter from the right
+gsap.utils.toArray(".episode-card").forEach((card) => {
+  gsap.fromTo(card,
+    { opacity: 0, scale: 0.85, x: 40 },
+    {
+      opacity: 1, scale: 1, x: 0, duration: 0.6, ease: "power3.out",
+      scrollTrigger: {
+        trigger: card,
+        containerAnimation: horizontalTween, // tells ScrollTrigger the card moves sideways
+        start: "left 90%",
+        toggleActions: "play none none reverse"
+      }
+    }
+  );
+});
+
+// About Me and Contact still wipe in left to right
+gsap.utils.toArray(".aboutMe > *, .contact > *").forEach((el) => {
+  gsap.fromTo(el,
+    { clipPath: "inset(0 100% 0 0)", x: -60, opacity: 0 },
+    {
+      clipPath: "inset(0 0% 0 0)", x: 0, opacity: 1, duration: 1, ease: "power3.out",
+      scrollTrigger: { trigger: el, start: "top 85%", toggleActions: "play none none reverse" }
+    }
+  );
+});
+
+// // Where the apple sits on screen (in pixels) once it's parked on the left
+// function getAppleScreenPos() {
+//     const v = new THREE.Vector3(getLeftX(), 0, 0).project(camera);
+//     return {
+//         x: (v.x * 0.5 + 0.5) * window.innerWidth,
+//         y: (-v.y * 0.5 + 0.5) * window.innerHeight
+//     };
+// }
+
+
+// gsap.utils.toArray(".episode-card").forEach((card, i) => {
+//     // offset that puts the card's center on top of the apple
+//     const offsetToApple = () => {
+//         const a = getAppleScreenPos();
+//         const r = card.getBoundingClientRect();
+//         return {
+//             x: a.x - (r.left + r.width / 2),
+//             y: a.y - (r.top + r.height / 2)
+//         };
+//     };
+
+//     ScrollTrigger.create({
+//         trigger: card,
+//         start: "top 85%",
+//         onEnter: () => {
+//             const o = offsetToApple();
+//             gsap.fromTo(card,
+//                 { x: o.x, y: o.y, scale: 0.1, opacity: 0 },
+//                 { x: 0, y: 0, scale: 1, opacity: 1, duration: 1, ease: "power3.out", delay: i * 0.1 }
+//             );
+//         },
+//         onLeaveBack: () => {
+//             // card gets sucked back into the apple
+//             const o = offsetToApple();
+//             gsap.to(card, { x: o.x, y: o.y, scale: 0.1, opacity: 0, duration: 0.6, ease: "power2.in" });
+//         }
+//     });
+
+//     // hover: apple takes the episode's color and turns a quarter
+//     card.addEventListener("mouseenter", () => {
+
+
+//         gsap.to(apple, { kick: "+=" + Math.PI / 2, duration: 0.9, ease: "power2.out" });
+//     });
+// });
 
 //start the 3D rendering
 animate();

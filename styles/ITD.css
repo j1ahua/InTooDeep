@@ -1,7 +1,7 @@
 :root{
     --text: #AF8FB5;
     --start-background: #6B6BA8;
-
+    --secondary-text: #DAC3E0;
 }
 body{
     background: var(--start-background);
@@ -15,7 +15,7 @@ body{
         flex-direction: column;
         justify-content: center;
         box-sizing: border-box;
-        height: 1000vh;
+        height: 150vh;
     }
     #container3D{
         position: fixed;
@@ -47,13 +47,50 @@ body{
         color: var(--text);
         position: relative;
         z-index: 1;
-        padding-left: 45vw;
-        padding-right: 45vw;
+        padding-right: 10vw;
+        overflow-x: clip;
+        
     }
-    
+    .descriptions{
+        height: 100vh;
+        padding-left: 45vw;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .episodes{
+        display: flex;
+        gap: 2rem;
+        width: max-content;
+    }
 
+    .episode-card {
+        width: 28vw;
+        flex: none;
+    }
 
+    .aboutMe,
+    .contact {
+        min-height: 100vh;
+        padding: 10vh 20vw 10vh 8vw; /* extra right padding leaves room for the apple */
+        flex-direction: column;
+        justify-content: center;
+    }
 
+    .aboutMe {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* photo | description */
+        gap: 3rem;
+        align-content: center;
+        height: 100vh;
+        box-sizing: border-box;
+        padding: 0 8vw;
+        column-gap: 2.5rem;
+        row-gap: 2rem;
+    }
+    p{
+        color: var(--secondary-text);
+    }
 }
 html, body{
     margin: 0;
