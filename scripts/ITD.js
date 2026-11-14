@@ -190,7 +190,7 @@ composer.addPass( bloomPass );
 
 //Render the scene
 function animate(){
-    requestAnimationFrame(animate);
+    // requestAnimationFrame(animate);
     
     if (object) {
         const target = isHovering ? 1: 0;
@@ -416,4 +416,5 @@ gsap.utils.toArray(".aboutMe > *, .contact > *").forEach((el) => {
 // });
 
 //start the 3D rendering
-animate();
+// animate();
+gsap.ticker.add(animate);
