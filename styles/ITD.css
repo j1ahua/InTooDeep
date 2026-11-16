@@ -42,13 +42,15 @@ body{
         text-align: center;
     }
     .content{
-        font-family: "Orbitron", sans-serif;
+        font-family: "Redaction 35", serif;
         font-optical-sizing: auto;
         color: var(--text);
         position: relative;
         z-index: 1;
         padding-right: 10vw;
         overflow-x: clip;
+        font-weight: 600;
+        font-size: 2rem;
         
     }
     .descriptions{

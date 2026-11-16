@@ -369,52 +369,5 @@ gsap.utils.toArray(".aboutMe > *, .contact > *").forEach((el) => {
   );
 });
 
-// // Where the apple sits on screen (in pixels) once it's parked on the left
-// function getAppleScreenPos() {
-//     const v = new THREE.Vector3(getLeftX(), 0, 0).project(camera);
-//     return {
-//         x: (v.x * 0.5 + 0.5) * window.innerWidth,
-//         y: (-v.y * 0.5 + 0.5) * window.innerHeight
-//     };
-// }
 
-
-// gsap.utils.toArray(".episode-card").forEach((card, i) => {
-//     // offset that puts the card's center on top of the apple
-//     const offsetToApple = () => {
-//         const a = getAppleScreenPos();
-//         const r = card.getBoundingClientRect();
-//         return {
-//             x: a.x - (r.left + r.width / 2),
-//             y: a.y - (r.top + r.height / 2)
-//         };
-//     };
-
-//     ScrollTrigger.create({
-//         trigger: card,
-//         start: "top 85%",
-//         onEnter: () => {
-//             const o = offsetToApple();
-//             gsap.fromTo(card,
-//                 { x: o.x, y: o.y, scale: 0.1, opacity: 0 },
-//                 { x: 0, y: 0, scale: 1, opacity: 1, duration: 1, ease: "power3.out", delay: i * 0.1 }
-//             );
-//         },
-//         onLeaveBack: () => {
-//             // card gets sucked back into the apple
-//             const o = offsetToApple();
-//             gsap.to(card, { x: o.x, y: o.y, scale: 0.1, opacity: 0, duration: 0.6, ease: "power2.in" });
-//         }
-//     });
-
-//     // hover: apple takes the episode's color and turns a quarter
-//     card.addEventListener("mouseenter", () => {
-
-
-//         gsap.to(apple, { kick: "+=" + Math.PI / 2, duration: 0.9, ease: "power2.out" });
-//     });
-// });
-
-//start the 3D rendering
-// animate();
 gsap.ticker.add(animate);
