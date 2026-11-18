@@ -3,9 +3,12 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-
+document.body.classList.add("intro-active");
 //values that scrolling controls:
 const apple = { x: 0, y: 0, scale: 1, spin: 0};
+const intro = { scale: 0.5, spin: 0.5};
+let introActive = true;
+
 let baseScale = 1; //the apple's original scale from the gltf
 
 gsap.registerPlugin(ScrollTrigger);
@@ -15,6 +18,9 @@ lenis.on('scroll', ScrollTrigger.update);
 gsap.ticker.add((time) => lenis.raf(time * 1000));
 gsap.ticker.lagSmoothing(0);
 
+history.scrollRestoration = "manual";
+window.scrollTo(0, 0);
+lenis.stop();
 
 //Create a Three.JS Scene
 const scene = new THREE.Scene();
@@ -198,11 +204,11 @@ function animate(){
         const speed = baseSpeed + (hoverSpeed - baseSpeed) * hoverFactor;
         autoRotationY += speed;
 
-        object.rotation.y = autoRotationY + apple.spin; //auto spin + scroll
+        object.rotation.y = autoRotationY + apple.spin + intro.spin; //auto spin + scroll
         object.rotation.x = 1.15;
         object.position.x = apple.x;
         object.position.y = apple.y;
-        object.scale.setScalar(baseScale * apple.scale);
+        object.scale.setScalar(baseScale * apple.scale * intro.scale);
     }
     renderer.render(scene, camera);
     // composer.render();
@@ -369,5 +375,51 @@ gsap.utils.toArray(".aboutMe > *, .contact > *").forEach((el) => {
   );
 });
 
+
+gsap.ticker.add(() => {
+  if (introActive) document.body.style.cursor = isHovering ? "pointer" : "default";
+});
+
+function startSequence() {
+  introActive = false;
+  document.body.style.cursor = "default";
+  window.removeEventListener("click", onIntroClick);
+
+  const tl = gsap.timeline();
+
+  tl
+    .to(".intro-text, .intro-hint", { opacity: 0, duration: 0.4 }, 0)
+    // apple enlarges and spins up fast (6π = 3 full turns)
+    .to(intro, { scale: 1.6, duration: 1.2, ease: "power2.in" }, 0)
+    .to(intro, { spin: Math.PI * 6, duration: 1.2, ease: "power2.in" }, 0)
+
+    // swap the solid black for the two eyelids (looks identical)
+    .add(() => {
+      gsap.set(".eyelid", { opacity: 1 });
+      document.getElementById("intro").style.background = "transparent";
+    }, 1.2)
+
+    // eyes open: lids part, apple settles to normal size and slows to a stop
+    .to(".eyelid.top",    { yPercent: -100, duration: 1.4, ease: "power3.inOut" }, 1.3)
+    .to(".eyelid.bottom", { yPercent:  100, duration: 1.4, ease: "power3.inOut" }, 1.3)
+    .to(intro, { scale: 1, duration: 1.4, ease: "power3.inOut" }, 1.3)
+    .to(intro, { spin: Math.PI * 8, duration: 1.4, ease: "power3.out" }, 1.2)
+
+    // cleanup + unlock scroll
+    .add(() => {
+      document.getElementById("intro").remove();
+      document.body.classList.remove("intro-active");
+      lenis.start();
+      ScrollTrigger.refresh();
+    });
+}
+
+function onIntroClick(e) {
+  pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  if (object && raycaster.intersectObject(object, true).length) startSequence();
+}
+window.addEventListener("click", onIntroClick);
 
 gsap.ticker.add(animate);
